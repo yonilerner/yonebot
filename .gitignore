@@ -1,3 +1,6 @@
+# ignore silly file
+.token
+
 # Logs
 logs
 *.log
