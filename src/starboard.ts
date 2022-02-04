@@ -1,15 +1,14 @@
 import {getMongoManager} from 'typeorm'
-import {StarModel} from './models/star-model'
 import {EMOJIS} from './utils'
 import {StarboardMessageModel} from './models/starboard-message-model'
 import {discordClient} from './discord-client'
 import {
     Constants,
-    Message,
     MessageActionRow,
     MessageButton,
     MessageEmbed,
-    PartialMessage,
+    MessageReaction,
+    PartialMessageReaction,
     TextChannel,
 } from 'discord.js'
 import PQueue from 'p-queue'
@@ -20,22 +19,22 @@ export const STARBOARD_CHANNEL_DEFAULT_NAME = 'starboard'
 
 export const starboardUpdateQueue = new PQueue()
 
-export function handleStarboardUpdate(message: Message | PartialMessage) {
-    starboardUpdateQueue.add(() => handleStarboardUpdateInternal(message))
+export function handleStarboardUpdate(reaction: MessageReaction | PartialMessageReaction) {
+    starboardUpdateQueue.add(() => handleStarboardUpdateInternal(reaction))
 }
 
-async function handleStarboardUpdateInternal(message: Message | PartialMessage) {
-    if (!message.inGuild()) {
+async function handleStarboardUpdateInternal(reaction: MessageReaction | PartialMessageReaction) {
+    if (!reaction.message.inGuild()) {
         return
     }
-    const fullMessage = await message.fetch()
-    if (!fullMessage.member) {
+    const message = await reaction.message.fetch()
+    if (!message.member || !message.inGuild()) {
         return
     }
     const messageId = message.id
-    const numStars = await getMongoManager().count(StarModel, {messageId})
+    const numStars = message.reactions.cache.get(reaction.emoji.toString())?.count ?? 0
 
-    if (!fullMessage.member) {
+    if (!message.member) {
         return
     }
     const guild = discordClient.guilds.cache.get(message.guildId)
@@ -52,12 +51,12 @@ async function handleStarboardUpdateInternal(message: Message | PartialMessage) 
 
     const embed = new MessageEmbed()
         .setAuthor({
-            name: fullMessage.member.displayName,
-            iconURL: fullMessage.member.displayAvatarURL({size: 16}),
+            name: message.member.displayName,
+            iconURL: message.member.displayAvatarURL({size: 16}),
         })
         .setColor(Constants.Colors.BLUE)
         .setDescription(message.content)
-    const attachment = fullMessage.attachments.first()
+    const attachment = message.attachments.first()
     if (attachment) {
         embed.setImage(attachment.url)
     }
@@ -69,7 +68,7 @@ async function handleStarboardUpdateInternal(message: Message | PartialMessage) 
 
     const component = new MessageActionRow().addComponents(
         new MessageButton()
-            .setURL(fullMessage.url)
+            .setURL(message.url)
             .setLabel('Go to message')
             .setStyle(MessageButtonStyles.LINK),
     )

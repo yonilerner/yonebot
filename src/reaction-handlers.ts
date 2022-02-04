@@ -8,8 +8,6 @@ import {
     Snowflake,
     User,
 } from 'discord.js'
-import {getMongoManager} from 'typeorm'
-import {StarModel} from './models/star-model'
 import {EMOJIS} from './utils'
 import {handleStarboardUpdate} from './starboard'
 
@@ -66,26 +64,12 @@ async function handleStarReactionCreated(
     reaction: MessageReaction | PartialMessageReaction,
     user: User | PartialUser,
 ) {
-    const star = {
-        userId: user.id,
-        messageId: reaction.message.id,
-    }
-    await getMongoManager().replaceOne(StarModel, star, star, {upsert: true})
-    await handleStarboardUpdate(reaction.message)
+    await handleStarboardUpdate(reaction)
 }
 
 async function handleStarReactionRemoved(
     reaction: MessageReaction | PartialMessageReaction,
     user?: User | PartialUser,
 ) {
-    const star = {
-        messageId: reaction.message.id,
-        userId: user?.id,
-    }
-    if (star.userId) {
-        await getMongoManager().deleteOne(StarModel, star)
-    } else {
-        await getMongoManager().deleteMany(StarModel, star)
-    }
-    await handleStarboardUpdate(reaction.message)
+    await handleStarboardUpdate(reaction)
 }
