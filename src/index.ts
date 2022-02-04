@@ -1,2 +1,2 @@
 import './init'
-import './client'
+import './discord-client'
