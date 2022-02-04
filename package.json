@@ -29,7 +29,7 @@
     "mongodb": "^3.7.3",
     "p-queue": "^6.6.2",
     "reflect-metadata": "^0.1.13",
-    "slashasaurus": "file:.yalc/slashasaurus",
+    "slashasaurus": "^0.1.0",
     "typeorm": "^0.2.41"
   },
   "devDependencies": {
