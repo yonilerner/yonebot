@@ -1,5 +1,4 @@
 import {SlashCommand} from 'slashasaurus'
-import {InteractionResponseTypes, InteractionTypes} from 'discord.js/typings/enums'
 
 export default new SlashCommand({
     name: 'sticker',
