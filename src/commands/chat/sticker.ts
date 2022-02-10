@@ -1,6 +1,12 @@
 import {SlashCommand} from 'slashasaurus'
 import {auditLogReport} from '../../utils'
 import {MessageEmbed} from 'discord.js'
+import {RateLimiterMemory, RateLimiterRes} from 'rate-limiter-flexible'
+
+const rateLimiter = new RateLimiterMemory({
+    points: 4,
+    duration: 60 * 5,
+})
 
 export default new SlashCommand(
     {
@@ -22,6 +28,18 @@ export default new SlashCommand(
             const channel = await interaction.channel?.fetch()
             if (!channel) {
                 return interaction.reply({content: 'WAT DOING', ephemeral: true})
+            }
+
+            try {
+                await rateLimiter.consume(interaction.user.id)
+            } catch (e) {
+                const response: RateLimiterRes = e as any
+                return interaction.reply({
+                    content: `Yo, slow down. You can send a sticker again in <t:${Math.floor(
+                        (Date.now() + response.msBeforeNext) / 1000,
+                    )}:R>`,
+                    ephemeral: true,
+                })
             }
 
             const message = await channel.send({
