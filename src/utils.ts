@@ -27,3 +27,20 @@ export async function auditLogReport(
     }
     await auditLogChannel.send(message)
 }
+
+export class ExtendableError extends Error {
+    constructor(message: string, extendingClass: any) {
+        super(message)
+        this.name = extendingClass.name
+        Object.setPrototypeOf(this, extendingClass.prototype)
+    }
+
+    toString() {
+        return `[object ${this.name}]`
+    }
+}
+export class UserError extends ExtendableError {
+    constructor(message: string) {
+        super(message, UserError)
+    }
+}

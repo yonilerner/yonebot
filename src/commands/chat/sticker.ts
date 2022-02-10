@@ -1,10 +1,10 @@
 import {SlashCommand} from 'slashasaurus'
-import {auditLogReport} from '../../utils'
+import {auditLogReport, UserError} from '../../utils'
 import {MessageEmbed} from 'discord.js'
 import {RateLimiterMemory, RateLimiterRes} from 'rate-limiter-flexible'
 
 const rateLimiter = new RateLimiterMemory({
-    points: 4,
+    points: 1,
     duration: 60 * 5,
 })
 
@@ -18,28 +18,27 @@ export default new SlashCommand(
         async run(interaction, client) {
             const guild = await interaction.guild?.fetch()
             if (!guild) {
-                return interaction.reply({content: 'Watcha doin', ephemeral: true})
+                throw new Error('missing guild')
             }
             const stickers = await guild.stickers.fetch()
             const randomSticker = stickers.at(Math.floor(Math.random() * stickers.size))
             if (!randomSticker) {
-                return interaction.reply({content: 'Aint no stickers', ephemeral: true})
+                throw new UserError('This server has no stickers')
             }
             const channel = await interaction.channel?.fetch()
             if (!channel) {
-                return interaction.reply({content: 'WAT DOING', ephemeral: true})
+                throw new Error('missing channel')
             }
 
             try {
                 await rateLimiter.consume(interaction.user.id)
             } catch (e) {
                 const response: RateLimiterRes = e as any
-                return interaction.reply({
-                    content: `Yo, slow down. You can send a sticker again in <t:${Math.floor(
+                throw new UserError(
+                    `Yo, slow down. You can send a sticker again in <t:${Math.floor(
                         (Date.now() + response.msBeforeNext) / 1000,
                     )}:R>`,
-                    ephemeral: true,
-                })
+                )
             }
 
             const message = await channel.send({

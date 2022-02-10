@@ -10,6 +10,7 @@ import {
 } from './reaction-handlers'
 import {createConnection} from 'typeorm'
 import {globals} from './globals.js'
+import {UserError} from './utils'
 
 export const discordClient = new SlashasaurusClient(
     {
@@ -42,6 +43,30 @@ discordClient.on('messageReactionRemoveEmoji', handleEmojiRemoved)
 discordClient.once('ready', async () => {
     console.log(`${discordClient.user?.tag} logged in`)
     await discordClient.registerCommandsFrom(path.join(__dirname, 'commands'), 'dev')
+})
+
+discordClient.useCommandMiddleware(async (interaction, _, __, next) => {
+    try {
+        await next()
+    } catch (e) {
+        if (e instanceof UserError) {
+            if (interaction.replied || interaction.deferred) {
+                await interaction.editReply(`:x: ${e.message}`)
+            } else {
+                await interaction.reply({
+                    content: `:x: ${e.message}`,
+                    ephemeral: true,
+                })
+            }
+        } else {
+            console.error(`Error handling command ${interaction.command?.name}`, e)
+            const replyer =
+                interaction.deferred || interaction.replied
+                    ? interaction.editReply
+                    : interaction.reply
+            replyer(`Unknown server error`)
+        }
+    }
 })
 
 createConnection()
