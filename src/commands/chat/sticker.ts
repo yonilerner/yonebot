@@ -4,7 +4,7 @@ import {MessageEmbed} from 'discord.js'
 import {RateLimiterMemory, RateLimiterRes} from 'rate-limiter-flexible'
 
 const rateLimiter = new RateLimiterMemory({
-    points: 1,
+    points: 4,
     duration: 60 * 5,
 })
 
