@@ -107,3 +107,5 @@ dist
 
 .yalc
 yalc.lock
+src/edgeql-js
+

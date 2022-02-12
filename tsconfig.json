@@ -19,7 +19,8 @@
     "emitDecoratorMetadata": true,
     "experimentalDecorators": true,
     "resolveJsonModule": true,
-    "baseUrl": "./src"
+    "baseUrl": ".",
+    "downlevelIteration": true
   },
   "exclude": ["node_modules"],
   "include": ["src"]

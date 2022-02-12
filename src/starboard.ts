@@ -1,6 +1,4 @@
-import {getMongoManager} from 'typeorm'
 import {EMOJIS} from './utils'
-import {StarboardMessageModel} from './models/starboard-message-model'
 import {discordClient} from './discord-client'
 import {
     Constants,
@@ -13,6 +11,8 @@ import {
 } from 'discord.js'
 import PQueue from 'p-queue'
 import {MessageButtonStyles} from 'discord.js/typings/enums.js'
+import e from './edgeql-js'
+import {edgedbClient} from './edgedb'
 
 export const STARBOARD_THRESHOLD = 3
 export const STARBOARD_CHANNEL_DEFAULT_NAME = 'starboard'
@@ -73,9 +73,14 @@ async function handleStarboardUpdateInternal(reaction: MessageReaction | Partial
             .setStyle(MessageButtonStyles.LINK),
     )
 
-    const starboardMessageModel = await getMongoManager().findOne(StarboardMessageModel, {
-        starredMessageId: messageId,
-    })
+    const starboardMessageModel = await e
+        .select(e.StarboardMessage, (s) => ({
+            starredMessageId: true,
+            starboardMessageId: true,
+            filter: e.op(s.starredMessageId, '=', messageId),
+        }))
+        .run(edgedbClient)
+
     if (!starboardMessageModel) {
         if (numStars < STARBOARD_THRESHOLD) {
             return
@@ -84,12 +89,12 @@ async function handleStarboardUpdateInternal(reaction: MessageReaction | Partial
             embeds: [embed],
             components: [component],
         })
-        await getMongoManager().save(
-            new StarboardMessageModel({
+        await e
+            .insert(e.StarboardMessage, {
                 starredMessageId: messageId,
                 starboardMessageId: message.id,
-            }),
-        )
+            })
+            .run(edgedbClient)
     } else {
         const starboardMessage = await starboardChannel.messages.fetch(
             starboardMessageModel.starboardMessageId,
